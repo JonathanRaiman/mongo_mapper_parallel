@@ -22,7 +22,7 @@ To get started:
 
 	User.connection(Mongo::Connection.new("localhost",nil, :pool_size => 10, :pool_timeout => 30))
 
-	parallelCompiler = ParallelCompiler.new(
+	parallelCompiler = MongoMapperParallel.new(
 		:class => User,
 		:split => :name,
 		:args => ["Bob", "William"],
