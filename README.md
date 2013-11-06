@@ -12,24 +12,24 @@ Usage
 
 To get started:
 
-  require 'mongo_mapper'
-  require 'mongo_mapper_parallel'
+	require 'mongo_mapper'
+	require 'mongo_mapper_parallel'
 
-  class User
-    include MongoMapper::Document
-    # your fields go here
-  end
+	class User
+		include MongoMapper::Document
+		# your fields go here
+	end
 
-  User.connection(Mongo::Connection.new("localhost",nil, :pool_size => 10, :pool_timeout => 30))
+	User.connection(Mongo::Connection.new("localhost",nil, :pool_size => 10, :pool_timeout => 30))
 
-  parallelCompiler = ParallelCompiler.new(
-    :class => User,
-    :split => :name,
-    :args => ["Bob", "William"],
-    :javascript => File.read(File.dirname(__FILE__)+"/myScript.js")
-  )
+	parallelCompiler = ParallelCompiler.new(
+		:class => User,
+		:split => :name,
+		:args => ["Bob", "William"],
+		:javascript => File.read(File.dirname(__FILE__)+"/myScript.js")
+	)
 
-  parallelCompiler.run
+	parallelCompiler.run
 
 The Compiler takes as arguments the `class`, the `split` key you will be using (in this example *:name*), and
 the javascript file you want to use as a String.
@@ -39,17 +39,17 @@ Javascript Format
 
 The javascript will receive as input 3 arguments:
 
-  function (start, end, _args) {
-    // your code goes here
-  }
+	function (start, end, _args) {
+		// your code goes here
+	}
 
 Where `_args` is whatever object you provided earlier as `args`.
 
 Note that the *start* and *end* keys are useful for running the following operation in your scripts:
 
-  var search_opts = {$gte: start};
-  if (end) search_opts["$lte"] = end;
-  db.users.find({name: search_opts}).forEach( function (el) {// etc...});
+	var search_opts = {$gte: start};
+	if (end) search_opts["$lte"] = end;
+	db.users.find({name: search_opts}).forEach( function (el) {// etc...});
 
 Known Issues
 ------------
