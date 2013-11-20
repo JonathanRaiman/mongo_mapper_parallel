@@ -57,13 +57,17 @@ class MongoMapperParallel
 		def compile
 			search_opts = {:name => {:$gte => @key}}
 			if @future_key then search_opts[:name][:$lte] = @future_key	end
-			command_class.database.command({
-				:"$eval" => javascript,
-				:args    => [@key, @future_key, args],
-				:nolock => true
-				})
+			begin
+				command_class.database.command({
+					:"$eval" => javascript,
+					:args    => [@key, @future_key, args],
+					:nolock => true
+					})
+			rescue Mongo::ConnectionFailure
+				raise Mongo::ConnectionFailure.new "Connection disconnected at position #{@position}"
+			end
 			@completed = true
-			puts "Completed chunk".green if @debug
+			puts "Completed chunk (#{@position})".green if @debug
 		end
 	end
 
@@ -74,7 +78,7 @@ class MongoMapperParallel
 	def get_split_keys
 		@split_keys, splits = [], @command_class.database.command({splitVector: "#{@command_class.database.name}.#{@command_class.collection.name}", keyPattern: {@split.to_sym => 1}, maxChunkSizeBytes: @splitSize })["splitKeys"]
 		splits.each_with_index do |split_key,k|
-			@split_keys << MongoMapperParallel::Key.new(:compiler => self, :key => split_key[@split.to_s], :future_key => (splits[k+1] ? splits[k+1][@split.to_s] : nil))
+			@split_keys << MongoMapperParallel::Key.new(:position => k, :compiler => self, :key => split_key[@split.to_s], :future_key => (splits[k+1] ? splits[k+1][@split.to_s] : nil),:debug => @debug)
 		end
 		if @split_keys.length == 0 and @command_class.count > 0 then get_extreme_split_keys end
 	end
@@ -84,7 +88,7 @@ class MongoMapperParallel
 	# @return [Array<MongoMapperParallel::Key>] the list of the keys that will be used for parallel operation
 	def get_extreme_split_keys
 		split_key = @command_class.where().order(@split.to_sym).fields(@split.to_sym).first.send(@split.to_sym)
-		@split_keys << MongoMapperParallel::Key.new(:compiler => self, :key => split_key, :future_key => nil, :debug => @debug)
+		@split_keys << MongoMapperParallel::Key.new(:position => 0, :compiler => self, :key => split_key, :future_key => nil, :debug => @debug)
 	end
 
 	# Instantiates the parallel operation object with the right class, javascript function, and field
@@ -115,7 +119,7 @@ class MongoMapperParallel
 		total = @split_keys.length
 		Parallel.each_with_index(@split_keys) do |section,k|
 			if !section.completed then section.compile end
-			JRProgressBar.show(k,total)
+			JRProgressBar.show(k,total) if @debug
 		end
 		puts "Success".green if @debug
 	end
