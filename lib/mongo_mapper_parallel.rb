@@ -31,6 +31,7 @@ class MongoMapperParallel
 		def initialize(opts={})
 			@key        = opts[:key]
 			@compiler   = opts[:compiler]
+			@position   = opts[:position]
 			@future_key = opts[:future_key]
 			@completed  = false
 			@debug      = opts[:debug].nil? ? true : opts[:debug]
