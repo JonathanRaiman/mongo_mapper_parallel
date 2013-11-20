@@ -11,6 +11,7 @@ class MongoMapperParallel
 	attr_accessor :command_class
 	attr_accessor :javascript
 	attr_accessor :args
+	attr_accessor :debug
 
 	class Key
 		# A chunk that will be parallelized
@@ -18,6 +19,7 @@ class MongoMapperParallel
 		attr_accessor :key
 		attr_accessor :completed
 		attr_reader   :compiler
+		attr_accessor :debug
 
 		# A chunk that will be parallelized
 		# 
@@ -25,12 +27,13 @@ class MongoMapperParallel
 		# @option opts [String] :key the lower bound of the range of resources to retrieve
 		# @option opts [String] :future_key the upper bound for the range of resources to retrieve
 		# @option opts [MongoMapperParallel] :compiler the Parallel execution object that holds the keys, javascript, and arguments.
-		#
+		# @option opts [Boolean] :debug whether to show messages during the process.
 		def initialize(opts={})
 			@key        = opts[:key]
 			@compiler   = opts[:compiler]
 			@future_key = opts[:future_key]
 			@completed  = false
+			@debug      = opts[:debug].nil? true : opts[:debug]
 		end
 
 		# The javascript function to run on the resources
@@ -60,7 +63,7 @@ class MongoMapperParallel
 				:nolock => true
 				})
 			@completed = true
-			puts "Completed chunk".green
+			puts "Completed chunk".green if @debug
 		end
 	end
 
@@ -81,7 +84,7 @@ class MongoMapperParallel
 	# @return [Array<MongoMapperParallel::Key>] the list of the keys that will be used for parallel operation
 	def get_extreme_split_keys
 		split_key = @command_class.where().order(@split.to_sym).fields(@split.to_sym).first.send(@split.to_sym)
-		@split_keys << MongoMapperParallel::Key.new(:compiler => self, :key => split_key, :future_key => nil)
+		@split_keys << MongoMapperParallel::Key.new(:compiler => self, :key => split_key, :future_key => nil, :debug => @debug)
 	end
 
 	# Instantiates the parallel operation object with the right class, javascript function, and field
@@ -92,6 +95,7 @@ class MongoMapperParallel
 	# @option opts [Array, Hash] :args the arguments to pass to the Javascript function
 	# @option opts [String, Symbol] :split the field to split the computation on -- typically an indexed unique property of the resources in the collection.
 	# @option opts [Fixnum] :maxChunkSizeBytes the size of the chunks to parallelize. Defaults to `32*1024*1024 = 33554432`.
+	# @option opts [Boolean] :debug whether to show messages during the process.
 	# @return [MongoMapperParallel]
 	#
 	def initialize(opts={})
@@ -100,6 +104,7 @@ class MongoMapperParallel
 		@args          = opts[:args]
 		@split         = opts[:split] # name, title, etc...
 		@splitSize     = opts[:maxChunkSizeBytes] || 32*1024*1024
+		@debug         = opts[:debug].nil? true : opts[:debug]
 		get_split_keys()
 		self
 	end
@@ -112,7 +117,7 @@ class MongoMapperParallel
 			if !section.completed then section.compile end
 			JRProgressBar.show(k,total)
 		end
-		puts "Success".green
+		puts "Success".green if @debug
 	end
 
 	# In case of stalled progress you can skip ahead by a percentage and mark the keys as `completed`.
