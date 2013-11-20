@@ -33,7 +33,7 @@ class MongoMapperParallel
 			@compiler   = opts[:compiler]
 			@future_key = opts[:future_key]
 			@completed  = false
-			@debug      = opts[:debug].nil? true : opts[:debug]
+			@debug      = opts[:debug].nil? ? true : opts[:debug]
 		end
 
 		# The javascript function to run on the resources
@@ -108,7 +108,7 @@ class MongoMapperParallel
 		@args          = opts[:args]
 		@split         = opts[:split] # name, title, etc...
 		@splitSize     = opts[:maxChunkSizeBytes] || 32*1024*1024
-		@debug         = opts[:debug].nil? true : opts[:debug]
+		@debug         = opts[:debug].nil? ? true : opts[:debug]
 		get_split_keys()
 		self
 	end
