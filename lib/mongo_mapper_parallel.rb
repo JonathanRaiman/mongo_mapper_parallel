@@ -71,12 +71,18 @@ class MongoMapperParallel
 		end
 	end
 
+	# Obtains the first key
+	# @return [Object] the first split key.
+	def get_first_split_key
+		@command_class.where().order(@split.to_sym).fields(@split.to_sym).first.send(@split.to_sym)
+	end
+
 	# Obtains the splitVectors keys to find chunks to parallelize via the MongoDB `splitVector` command.
 	#
 	# @return [Array<MongoMapperParallel::Key>] the list of the keys that will be used for parallel operation
-	#
 	def get_split_keys
 		@split_keys, splits = [], @command_class.database.command({splitVector: "#{@command_class.database.name}.#{@command_class.collection.name}", keyPattern: {@split.to_sym => 1}, maxChunkSizeBytes: @splitSize })["splitKeys"]
+		splits.unshift({@split.to_s => get_first_split_key})
 		splits.each_with_index do |split_key,k|
 			@split_keys << MongoMapperParallel::Key.new(:position => k, :compiler => self, :key => split_key[@split.to_s], :future_key => (splits[k+1] ? splits[k+1][@split.to_s] : nil),:debug => @debug)
 		end
@@ -87,8 +93,8 @@ class MongoMapperParallel
 	#
 	# @return [Array<MongoMapperParallel::Key>] the list of the keys that will be used for parallel operation
 	def get_extreme_split_keys
-		split_key = @command_class.where().order(@split.to_sym).fields(@split.to_sym).first.send(@split.to_sym)
-		@split_keys << MongoMapperParallel::Key.new(:position => 0, :compiler => self, :key => split_key, :future_key => nil, :debug => @debug)
+		first_split_key = get_first_split_key
+		@split_keys << MongoMapperParallel::Key.new(:position => 0, :compiler => self, :key => first_split_key, :future_key => nil, :debug => @debug)
 	end
 
 	# Instantiates the parallel operation object with the right class, javascript function, and field
