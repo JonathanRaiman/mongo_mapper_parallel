@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'mongo_mapper_parallel'
-  s.version     = '1.0.7'
+  s.version     = '1.0.8'
   s.date        = '2013-11-19'
   s.summary     = "Extremely fast non-blocking parallel javascripts on entire MongoDB collection with MongoMapper adapter."
   s.description = "Mongo Mapper Parallel can perform MapReduce-like operations on an entire collection in parallel. This is a non-blocking operation, so the scripts can invoke database methods (db.collection.update, db.collection.insert, etc...) at blazing speed."
