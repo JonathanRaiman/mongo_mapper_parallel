@@ -54,7 +54,7 @@ Note that the *start* and *end* keys are useful for running the following operat
 Known Issues
 ------------
 
-It appears that under certain conditions a segmentation fault will occur after a while. So far the cause
+It appears that under certain conditions a [segmentation fault](http://jira.mongodb.org/browse/SERVER-11899) will occur after a while. So far the cause
 is not known, but it appears this is an issue that others have reported to Mongo already, so hopefully
 the next update will fix this. In the meantime you can always relaunch the calculation from the point at
 which this failed.
